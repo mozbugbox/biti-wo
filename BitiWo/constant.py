@@ -6,7 +6,7 @@ __all__ = ["APPNAMEFULL", "APPNAME", "CACHE_DIR", "DATA_DIR", "DB_PATH", "PLAYER
 import os
 import pathlib
 
-import xdg
+from gi.repository import GLib
 
 VERSION = "0.1"
 APPNAMEFULL = "BiTi Wo"
@@ -20,7 +20,7 @@ PLAYER_BIN = " ".join([
     "--ytdl-format='bestvideo[height<=?720]+bestaudio'",
 ])
 
-CACHE_DIR = os.path.join(xdg.xdg_cache_home(), APPNAME)
-DATA_DIR = os.path.join(xdg.xdg_data_home(), APPNAME)
+CACHE_DIR = os.path.join(GLib.get_user_cache_dir(), APPNAME)
+DATA_DIR = os.path.join(GLib.get_user_data_dir(), APPNAME)
 DB_PATH = os.path.join(DATA_DIR, f"{APPNAME}.sqlite")
 

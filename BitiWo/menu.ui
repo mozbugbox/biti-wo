@@ -1,0 +1,93 @@
+<?xml version="1.0" encoding="UTF-8"?>
+<interface>
+  <menu id="win-menu">
+    <section>
+      <item>
+        <attribute name="action">win.add-member-from-clipboard</attribute>
+        <attribute name="label" translatable="yes">Add Member From Clipboard</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.add-member-dialog</attribute>
+        <attribute name="label" translatable="yes">Add Member</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.remove-selected-member</attribute>
+        <attribute name="label" translatable="yes">Remove Member</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.update-selected-member-videos</attribute>
+        <attribute name="label" translatable="yes">Refresh Member Videos</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.update-all-member-videos</attribute>
+        <attribute name="label" translatable="yes">Refresh All Members</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.catch-up-selected-member</attribute>
+        <attribute name="label" translatable="yes">Catch Up Member Videos</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="action">win.play-selected</attribute>
+        <attribute name="label" translatable="yes">Play Video</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.show-video-playlist-pages</attribute>
+        <attribute name="label" translatable="yes">Show Video Playlist</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="action">win.yank-member-url</attribute>
+        <attribute name="label" translatable="yes">Copy Member URL</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.yank-video-url</attribute>
+        <attribute name="label" translatable="yes">Copy Video URL</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.play-clipboard-url</attribute>
+        <attribute name="label" translatable="yes">Play Clipboard URL</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="action">win.next-member</attribute>
+        <attribute name="label" translatable="yes">Next Member</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.previous-member</attribute>
+        <attribute name="label" translatable="yes">Previous Member</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.next-updated-member</attribute>
+        <attribute name="label" translatable="yes">Next Updated Member</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.next-video</attribute>
+        <attribute name="label" translatable="yes">Next Video</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.previous-video</attribute>
+        <attribute name="label" translatable="yes">Previous Video</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="action">win.reload-video-cover-image</attribute>
+        <attribute name="label" translatable="yes">Reload Video Image</attribute>
+      </item>
+      <item>
+        <attribute name="action">win.setup-player-bin</attribute>
+        <attribute name="label" translatable="yes">Setup Media Player</attribute>
+      </item>
+    </section>
+    <section>
+      <item>
+        <attribute name="action">app.quit</attribute>
+        <attribute name="label" translatable="yes">_Quit</attribute>
+    </item>
+    </section>
+  </menu>
+</interface>

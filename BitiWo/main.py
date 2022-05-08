@@ -1316,11 +1316,6 @@ def setup_log(log_level=None):
 
 setup_log()
 
-def set_progname():
-    """Change process name for the application"""
-    import setproctitle
-    setproctitle.setproctitle(APPNAME)
-
 def main():
     def set_stdio_encoding(enc=NATIVE):
         import codecs; stdio = ["stdin", "stdout", "stderr"]
@@ -1332,11 +1327,12 @@ def main():
     log_level = logging.INFO
     setup_log(log_level)
 
-    set_progname()
+    GLib.set_prgname(APPNAME)
+    GLib.set_application_name(APPNAMEFULL)
+
     os.makedirs(CACHE_DIR, exist_ok=True)
     os.makedirs(DATA_DIR, exist_ok=True)
 
-    GLib.set_application_name(APPNAME)
     app = Application()
     app.run(sys.argv)
 

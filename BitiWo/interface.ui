@@ -42,6 +42,7 @@
     <property name="can-focus">False</property>
     <property name="default-width">1080</property>
     <property name="default-height">720</property>
+    <property name="icon">bitiwo.svg</property>
     <child>
       <object class="GtkBox">
         <property name="visible">True</property>

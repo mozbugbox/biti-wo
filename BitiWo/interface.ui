@@ -171,10 +171,10 @@
           <object class="GtkStatusbar" id="statusbar_main">
             <property name="visible">True</property>
             <property name="can-focus">False</property>
-            <property name="margin-start">10</property>
-            <property name="margin-end">10</property>
-            <property name="margin-top">2</property>
-            <property name="margin-bottom">2</property>
+            <property name="margin-start">1</property>
+            <property name="margin-end">1</property>
+            <property name="margin-top">1</property>
+            <property name="margin-bottom">1</property>
             <property name="orientation">vertical</property>
             <property name="spacing">2</property>
           </object>

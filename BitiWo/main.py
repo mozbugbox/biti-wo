@@ -396,7 +396,7 @@ class Controller(GObject.GObject):
 
         self.load_image_futures = set()  # Image Loading futures that can be cancelled
         self.load_member_futures = set()  # Member Loading futures that can be cancelled
-        self.load_misc_futures = set  # Member Loading futures that can be cancelled
+        self.load_misc_futures = set()  # Member Loading futures that can be cancelled
         self.app = app
         self.db = db
 

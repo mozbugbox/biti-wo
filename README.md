@@ -8,8 +8,9 @@ Maintain favourite bilibili member videos
 ## Depends:
 
 * Python3
+* Python Requests (HTTP download)
 * Gtk 3.0
 * mpv (Play video)
-* yt-dlp (Used by mpv to play bilibili)
+* youtube-dl/yt-dlp (Used by mpv to access bilibili)
 
 

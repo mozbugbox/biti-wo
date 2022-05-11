@@ -127,6 +127,7 @@ class VideoRow(Gtk.ListBoxRow):
 
         self.set_title_attributes()
         self.label_title.set_text(vinfo["title"])
+        self.label_title.set_tooltip_text(vinfo["title"])
         self.label_description.set_text(vinfo["description"])
         self.label_length.set_text(duration)
         if isinstance(vinfo["view_count"], int):

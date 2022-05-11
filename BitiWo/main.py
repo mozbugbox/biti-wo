@@ -128,12 +128,15 @@ class VideoRow(Gtk.ListBoxRow):
         self.set_title_attributes()
         self.label_title.set_text(vinfo["title"])
         self.label_title.set_tooltip_text(vinfo["title"])
+
         self.label_description.set_text(vinfo["description"])
+
         self.label_length.set_text(duration)
         if isinstance(vinfo["view_count"], int):
             self.label_played.set_text(f"{vinfo['view_count']:,d}")
         else:
             self.label_played.set_text(f"{vinfo['view_count']}")
+
         self.label_date.set_text(date_str)
 
         self.image_cover.set_tooltip_text(vinfo["name"])
@@ -902,8 +905,9 @@ class Controller(GObject.GObject):
         mid = row[MEMBER_COL_MID]
         self.db.set_member_videos_visited(mid, 1)
         for vrow in self.listbox:
-            vrow.video_info["visited"] = 1
-            vrow.set_title_attributes()
+            if isinstance(vrow, VideoRow):
+                vrow.video_info["visited"] = 1
+                vrow.set_title_attributes()
         row[MEMBER_COL_NEWITEM] = 0
         row[MEMBER_COL_VISIBLE] = False
 

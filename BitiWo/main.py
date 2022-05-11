@@ -1077,8 +1077,10 @@ class Controller(GObject.GObject):
         """Show pages of a video"""
         if (bvid := self.selected_video_bvid) is not None:
             def get_page_and_pop():
-                video_page_info_list = self.extractor.get_video_playlist_pages(bvid)
-                main_thread_run(self.pop_video_pages, bvid, video_page_info_list)
+                json_data = self.extractor.get_video_playlist_pages(bvid)
+                if 'data' in json_data:
+                    video_page_info_list = json_data["data"]
+                    main_thread_run(self.pop_video_pages, bvid, video_page_info_list)
             future = self.executor_misc_loader.submit(get_page_and_pop)
             future.add_done_callback(debug_future_exception)
             self.load_misc_futures.add(future)

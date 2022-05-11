@@ -143,18 +143,13 @@ class ExtractorBilibili(Extractor):
         return new_videos
 
     def get_video_playlist_pages(self, bvid):
-        """Get list of video pages for a video by bvid"""
-        pages = {}
-        url = f"https://www.bilibili.com/video/{bvid}"
+        """Get data of video page list for a video by bvid"""
+        url = f"https://api.bilibili.com/x/player/pagelist?bvid={bvid}&jsonp=jsonp"
         resp = self.get(url)
-        page_pat = re.compile(r'window\.__INITIAL_STATE__=.+?"pages":(\[\{.+?\}\]),.+?<\/script>')
-        mobj = page_pat.search(resp.text)
-        if mobj:
-            pages_str = mobj.group(1)
-            pages = json.loads(pages_str)
-            log.debug(f"get_video_playlist_pages: {pages}")
-        return pages
-
+        data = resp.json()
+        if 'data' not in data:
+            log.error(f"Video page list: {data}")
+        return data
 
 def setup_log(log_level=None):
     global log
@@ -190,7 +185,7 @@ def main():
     member_id = sys.argv[1]
     svideo = ExtractorBilibili()
     __import__('pprint').pprint(svideo.get(member_id).json()); return
-    # print(svideo.get_video_playlist_pages(member_id)); return
+    #__import__('pprint').pprint(svideo.get_video_playlist_pages(member_id)); return
     #resp = svideo.get(member_id); print(resp.content); return
     # page_info = svideo.get_video_page(member_id, 1)
     # page_info = svideo.get_all_video_pages()

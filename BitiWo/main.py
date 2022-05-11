@@ -560,12 +560,19 @@ class Controller(GObject.GObject):
     def get_video_row_by_bvid(self, bvid):
         """return ListBoxRow for a given video bvid"""
         for row in self.listbox:
-            if row.video_info["bvid"] == bvid:
+            if isinstance(row, VideoRow) and row.video_info["bvid"] == bvid:
                 return row
 
     @property
     def selected_video_row(self):
-        """Return a selected video row """
+        """Return a selected VideoRow """
+        row = self.selected_video_list_row
+        return row if isinstance(row, VideoRow) else None
+
+    @property
+    def selected_video_list_row(self):
+        """Return a selected row of video listbox
+        @return: could be VideoRow, LoadMoreVideoRow or None"""
         rows = self.listbox.get_selected_rows()
         return rows[0] if len(rows) > 0 else None
 
@@ -995,7 +1002,7 @@ class Controller(GObject.GObject):
 
     def step_video(self, step):
         """Move video listbox cursor"""
-        row = self.selected_video_row
+        row = self.selected_video_list_row
         if row is not None:
             self.listbox.emit("move-cursor", Gtk.MovementStep.DISPLAY_LINES, step)
         else:

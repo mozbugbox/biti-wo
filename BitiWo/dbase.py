@@ -55,7 +55,7 @@ class DataBase:
         self.table_columns["members"] = [
                     "mid INTEGER UNIQUE",
                     "name TEXT",
-                    "last_update INTEGER"
+                    "last_update REAL"
                 ]
         self.create_table("members", self.table_columns["members"])
 
@@ -78,7 +78,7 @@ class DataBase:
         # Store member that have been removed but still has cache file left for later deletion
         self.table_columns["removed_member"] = [
                     "mid INTEGER UNIQUE",
-                    "time_stamp INTEGER"
+                    "time_stamp REAL"
                 ]
         self.create_table("removed_member", self.table_columns["removed_member"])
         self.conn.commit()

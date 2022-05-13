@@ -1221,12 +1221,15 @@ class Application(Gtk.Application):
                 flags=Gio.ApplicationFlags.HANDLES_COMMAND_LINE,
                 **kwargs)
         self.window = None
-        self.db = dbase.DataBase(DB_PATH)
+        self.db = None
+        self.args = {}
 
 
         self.add_main_option("Debug", ord("D"),
-            GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Debug mode on",
-            None,)
+            GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Debug mode on", None)
+        self.add_main_option("database", ord("d"),
+            GLib.OptionFlags.NONE, GLib.OptionArg.STRING, "File path of App database", None)
+
 
     def do_startup(self):
         builder = Gtk.Builder()
@@ -1249,8 +1252,13 @@ class Application(Gtk.Application):
 
     def do_activate(self):
         """Real startup from here."""
-        log.debug(f"{CACHE_DIR=}, {DATA_DIR=}, {DB_PATH=}")
         Gtk.Application.do_activate(self)
+
+        if self.db is None:
+            db_path = self.args.get("database", None) or DB_PATH
+            self.db = dbase.DataBase(db_path)
+
+        log.debug(f"{CACHE_DIR=}, {DATA_DIR=}, {db_path=}")
 
         if self.window is None:
             self.window = self.builder.get_object("main_window")
@@ -1285,10 +1293,11 @@ class Application(Gtk.Application):
         options = command_line.get_options_dict()
         if options:
             options = options.end().unpack()
+            self.args = options
             if options.get("Debug", False):
                 setup_log(logging.DEBUG)
 
-            log.debug(f"{options=}")
+            logging.debug(f"{options=}")
 
         self.activate()
         return True

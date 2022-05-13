@@ -24,6 +24,7 @@ class DataBase:
         if path is None:
             path = DB_PATH
 
+        self.db_version = "0.1"
         self.table_columns = {}
 
         self.conn = sqlite3.connect(path)
@@ -33,6 +34,7 @@ class DataBase:
 
         self.cur = self.conn.cursor()
         self.setup_tables()
+        self.update_table_scheme()
 
     def create_table(self, table_name, columns):
         """Create a db table with the given name and columns"""
@@ -79,6 +81,43 @@ class DataBase:
                     "time_stamp INTEGER"
                 ]
         self.create_table("removed_member", self.table_columns["removed_member"])
+        self.conn.commit()
+
+    def get_table_columns(self, table):
+        rows = self.cur.execute(f"SELECT name FROM PRAGMA_TABLE_INFO('{table}')")
+        cols = [x[0] for x in rows.fetchall()]
+        return cols
+
+    def update_table_scheme(self):
+        """Migrat the old version of db to the latest version"""
+        db_version = self.get_config("db_version")
+        log.debug(f"DB: {self.db_version=}, {db_version=}")
+        if db_version == self.db_version:
+            return
+
+        for table in ["members", "videos", "removed_member"]:
+            new_cols = {c.lstrip().split()[0]: c for c in self.table_columns[table]}
+            old_cols = self.get_table_columns(table)
+
+            for col in new_cols:
+                if col not in old_cols:
+                    log.debug(f"DB: Add {col=} To {table=}")
+                    self.cur.execute(f"ALTER TABLE {table} ADD COLUMN " + new_cols[col])
+
+        self.set_config("db_version", self.db_version)
+        self.conn.commit()
+
+    def restruct_table(self, table):
+        """Create table with current schema and fill with old data"""
+        tmp_table = table + "_tmp"
+        old_cols = self.get_table_columns(table)
+        cols_query = ", ".join(old_cols)
+
+        self.create_table(tmp_table, self.table_columns[table])
+        self.cur.execute(f"INSERT INTO {tmp_table}({cols_query}) SELECT {cols_query} FROM {table};")
+        self.cur.execute(f"DROP TABLE {table};")
+        self.cur.execute(f"ALTER TABLE {tmp_table} RENAME TO {table};")
+
         self.conn.commit()
 
     def add_member(self, mid, name):

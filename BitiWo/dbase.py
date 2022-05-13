@@ -23,58 +23,62 @@ class DataBase:
     def __init__(self, path=None):
         if path is None:
             path = DB_PATH
+
+        self.table_columns = {}
+
         self.conn = sqlite3.connect(path)
         self.conn.row_factory = sqlite3.Row
 
         self.conn.create_function("MATCH", 2, utils.match_func)
 
         self.cur = self.conn.cursor()
-        self.create_table()
+        self.setup_tables()
 
-    def create_table(self):
-        """Create required tables"""
+    def create_table(self, table_name, columns):
+        """Create a db table with the given name and columns"""
+        column_query = ", \n  ".join(columns)
+        self.cur.execute(f"CREATE TABLE IF NOT EXISTS {table_name}(\n  {column_query}\n  );")
+
+    def setup_tables(self):
+        """Create required db tables"""
 
         # Store application configuration
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS
-                config(
-                    key TEXT UNIQUE,
-                    value TEXT
-                );
-                """)
+        self.table_columns["config"] = [
+                    "key TEXT UNIQUE",
+                    "value TEXT"
+                ]
+        self.create_table("config", self.table_columns["config"])
 
         # Store member information
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS
-                members(
-                    mid INTEGER UNIQUE,
-                    name TEXT,
-                    last_update INTEGER
-                );
-                """)
+        self.table_columns["members"] = [
+                    "mid INTEGER UNIQUE",
+                    "name TEXT",
+                    "last_update INTEGER"
+                ]
+        self.create_table("members", self.table_columns["members"])
 
         # Store video information
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS
-                videos(
-                    aid INTEGER,
-                    bvid TEXT UNIQUE,
-                    mid INTEGER,
-                    created INTEGER,
-                    title TEXT,
-                    description TEXT,
-                    length TEXT,
-                    picture_url TEXT,
-                    view_count INTEGER,
-                    comment INTEGER,
-                    visited INTEGER
-                );
-                """)
+        self.table_columns["videos"] = [
+                    "aid INTEGER",
+                    "bvid TEXT UNIQUE ON CONFLICT REPLACE",
+                    "mid INTEGER",
+                    "created INTEGER",
+                    "title TEXT",
+                    "description TEXT",
+                    "length TEXT",
+                    "picture_url TEXT",
+                    "view_count INTEGER",
+                    "comment INTEGER",
+                    "visited INTEGER"
+                ]
+        self.create_table("videos", self.table_columns["videos"])
 
         # Store member that have been removed but still has cache file left for later deletion
-        self.cur.execute("""CREATE TABLE IF NOT EXISTS
-                removed_member(
-                    mid INTEGER UNIQUE,
-                    time_stamp INTEGER
-                );
-                """)
+        self.table_columns["removed_member"] = [
+                    "mid INTEGER UNIQUE",
+                    "time_stamp INTEGER"
+                ]
+        self.create_table("removed_member", self.table_columns["removed_member"])
         self.conn.commit()
 
     def add_member(self, mid, name):

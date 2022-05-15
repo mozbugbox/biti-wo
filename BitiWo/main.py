@@ -98,9 +98,9 @@ class VideoRow(Gtk.ListBoxRow):
         super(Gtk.Bin, self).__init__()
         self.init_template()
         self.controller = controller
-        self.video_info = vinfo
 
         self.cache_dir = self.controller.get_cache_dir(vinfo["mid"])
+        self.video_info = vinfo
 
         date = datetime.datetime.fromtimestamp(vinfo["created"])
         now = datetime.datetime.now()
@@ -153,14 +153,11 @@ class VideoRow(Gtk.ListBoxRow):
         """Convert sqlite3.Row to dict"""
         self._video_info = dict(x)
 
-    @property
-    def image_path(self):
         url = self.video_info["picture_url"]
         sha3 = hashlib.sha3_224()
         sha3.update(url.encode("utf-8"))
         fname_hash = sha3.hexdigest()
-        path = os.path.join(self.cache_dir, fname_hash + ".jpg")
-        return path
+        self.image_path = os.path.join(self.cache_dir, fname_hash + ".jpg")
 
     @property
     def cover_downloaded(self):
@@ -176,18 +173,30 @@ class VideoRow(Gtk.ListBoxRow):
         attrlist.insert(Pango.AttrFontDesc.new(font_desc))
         self.label_title.set_attributes(attrlist)
 
-    def load_image_pixbuf(self, url):
-        """Load image pixbuf from a url with disk cache"""
-        from_net = False
-        path = self.image_path
+    def load_image(self):
+        """Load image into VideoRow"""
+        log.debug(f"load_image from disk: {self.image_path}")
+        if not self.cover_downloaded:
+            return
 
-        if os.path.exists(path):
-            log.debug(f"load_image_pixbuf from disk: {path}")
-            pix = GdkPixbuf.Pixbuf.new_from_file(path)
+        if self.get_parent() is not None:
+            pix = GdkPixbuf.Pixbuf.new_from_file(self.image_path)
+            self.image_cover.set_from_pixbuf(pix)
         else:
-            resp = self.controller.extractor.get(url)
+            log.debug(f"{self.video_info['title']} unparented.")
+
+    def down_and_load_image(self):
+        """Download and load image into VideoRow"""
+        url = self.video_info["picture_url"]
+        log.debug(f"down_and_load_image: {url=}")
+
+        resp = self.controller.extractor.get(url)
+        image_data = resp.content
+
+        def scale_and_load(idata):
+            # Pixbuf loader seems not thread safe
             loader = GdkPixbuf.PixbufLoader()
-            loader.write(resp.content)
+            loader.write(idata)
             loader.close()
 
             pix = loader.get_pixbuf()
@@ -195,30 +204,19 @@ class VideoRow(Gtk.ListBoxRow):
             w = pix.get_width()
             pix = pix.scale_simple(IMAGE_WIDTH, h / w * IMAGE_WIDTH,
                     GdkPixbuf.InterpType.BILINEAR)
-            pix.savev(path, "jpeg", None, None)
-            from_net = True
-        return from_net, pix
+            pix.savev(self.image_path, "jpeg", None, None)
+            self.load_image()
 
-    def load_image(self):
-        url = self.video_info["picture_url"]
-        log.debug(f"Load_image: {url=}")
-        from_net, pix = self.load_image_pixbuf(url)
-        def set_image_cover():
-            if self.get_parent() is not None:
-                self.image_cover.set_from_pixbuf(pix)
-            else:
-                log.debug(f"{self.video_info['title']} unparented.")
-        main_thread_run(set_image_cover)
+        main_thread_run(scale_and_load, image_data)
 
-        if from_net:
-            time.sleep(0.1)
+        time.sleep(0.1)
 
     def reload_cover_image(self):
         """Reload a disk cached cover image from network"""
         image_path = self.image_path
         if os.path.exists(image_path):
             os.remove(image_path)
-        future = self.controller.executor_image_network_loader.submit(self.load_image)
+        future = self.controller.executor_image_network_loader.submit(self.down_and_load_image)
         future.add_done_callback(debug_future_exception)
         self.controller.load_image_futures.add(future)
         return future
@@ -410,8 +408,6 @@ class Controller(GObject.GObject):
 
         self.update_member_waiting_list = {}
         self.extractor = extractorbilibili.ExtractorBilibili()
-        self.executor_image_loader = concurrent.futures.ThreadPoolExecutor(
-                thread_name_prefix="ImageLoader")
         self.executor_image_network_loader = concurrent.futures.ThreadPoolExecutor(max_workers=8,
                 thread_name_prefix="ImageNetworkLoader")
         self.executor_member_loader = concurrent.futures.ThreadPoolExecutor(
@@ -651,13 +647,12 @@ class Controller(GObject.GObject):
                     self.listbox.insert(row, -1)
 
                 # load image in background
-                # Use different executor to prevent network thread block disk thread
                 if row.cover_downloaded:
-                    future = self.executor_image_loader.submit(row.load_image)
+                    GLib.idle_add(row.load_image)
                 else:
-                    future = self.executor_image_network_loader.submit(row.load_image)
-                future.add_done_callback(debug_future_exception)
-                self.load_image_futures.add(future)
+                    future = self.executor_image_network_loader.submit(row.down_and_load_image)
+                    future.add_done_callback(debug_future_exception)
+                    self.load_image_futures.add(future)
 
                 if (i + 1) % step == 0:
                     yield True
@@ -1145,7 +1140,6 @@ class Controller(GObject.GObject):
 
     def do_quit(self):
         """Clean up on quit signal"""
-        self.executor_image_loader.shutdown(cancel_futures=True)
         self.executor_member_loader.shutdown(cancel_futures=True)
         self.executor_misc_loader.shutdown(cancel_futures=True)
 

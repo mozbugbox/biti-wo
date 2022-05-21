@@ -406,7 +406,7 @@ class Controller(GObject.GObject):
         self.update_all_source_id = -1
         self.load_video_source_id = -1
 
-        self.update_member_waiting_list = {}
+        self.update_member_waiting_dict = {}
         self.extractor = extractorbilibili.ExtractorBilibili()
         self.executor_image_network_loader = concurrent.futures.ThreadPoolExecutor(max_workers=8,
                 thread_name_prefix="ImageNetworkLoader")
@@ -929,8 +929,8 @@ class Controller(GObject.GObject):
         minfo = self.db.get_member_info(mid)
         log.debug(f"Updating {minfo['name']}[{mid}]")
         self.app.status_show_message("update-member", f"Updating member {minfo['name']} ...")
-        if mid in self.update_member_waiting_list:
-            self.update_member_waiting_list.pop(mid)
+        if mid in self.update_member_waiting_dict:
+            self.update_member_waiting_dict.pop(mid)
 
         last_update = self.db.get_last_update(mid)
         def do_it():
@@ -970,11 +970,20 @@ class Controller(GObject.GObject):
     def update_all_member_videos(self):
         """Fetch new videos for all the members"""
         members = self.db.get_member_list()
-        self.update_member_waiting_list |= {x["mid"]: x["name"] for x in members}
-        while len(self.update_member_waiting_list) > 0:
+        update_member_dict = {x["mid"]: x["name"] for x in members}
+
+        # sort member by the display order
+        member_order = self.db.get_config("member_order")
+        ordered_member_dict = {x: update_member_dict[x] for x in member_order}
+        ordered_member_dict |= {x: y for x, y in update_member_dict.items()
+                if x not in ordered_member_dict}
+
+        self.update_member_waiting_dict |= ordered_member_dict
+
+        while len(self.update_member_waiting_dict) > 0:
             # FIFO for dict
-            mid = next(iter(self.update_member_waiting_list))
-            name = self.update_member_waiting_list.pop(mid)
+            mid = next(iter(self.update_member_waiting_dict))
+            name = self.update_member_waiting_dict.pop(mid)
             future = self.update_member_videos(mid)
             while not future.done():
                 yield True

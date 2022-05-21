@@ -648,7 +648,7 @@ class Controller(GObject.GObject):
 
                 # load image in background
                 if row.cover_downloaded:
-                    GLib.idle_add(row.load_image)
+                    main_thread_run(row.load_image)
                 else:
                     future = self.executor_image_network_loader.submit(row.down_and_load_image)
                     future.add_done_callback(debug_future_exception)
@@ -665,7 +665,7 @@ class Controller(GObject.GObject):
 
         insertor = insert_generator()
         if next(insertor):
-            self.load_video_source_id = main_thread_run(next, insertor)
+            self.load_video_source_id = GLib.idle_add(next, insertor)
 
     def on_load_more_videos(self, action, param, udata):
         """Load more video from db for current member"""

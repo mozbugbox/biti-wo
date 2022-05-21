@@ -1231,7 +1231,7 @@ class Application(Gtk.Application):
         self.add_main_option("Debug", ord("D"),
             GLib.OptionFlags.NONE, GLib.OptionArg.NONE, "Debug mode on", None)
         self.add_main_option("database", ord("d"),
-            GLib.OptionFlags.NONE, GLib.OptionArg.STRING, "File path of App database", None)
+            GLib.OptionFlags.NONE, GLib.OptionArg.STRING, "File path of App database", "DB_PATH")
 
 
     def do_startup(self):

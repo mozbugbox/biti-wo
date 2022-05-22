@@ -517,11 +517,10 @@ class Controller(GObject.GObject):
         else:
             self.pop_invalid_message(f"Invalid action name: {action_name}.")
 
-    def setup_member_row_data(self, mid, minfo):
+    def setup_member_row_data(self, status):
         """Build liststore_member row data from db query result"""
-        last_update = self.db.get_last_update(mid)
-        new_count = self.db.get_unvisited_count(mid)
-        row_data = (mid, minfo["name"], last_update, new_count, new_count != 0)
+        row_data = (status["mid"], status["name"], status["last_update"],
+                status["new_count"], status["new_count"] is not None)
         return row_data
 
     def load_members(self):
@@ -539,17 +538,19 @@ class Controller(GObject.GObject):
         filled_members = set(mid_list)
         mid_list += [mid for mid in member_dict.keys() if mid not in filled_members]
 
+        all_member_status = self.db.get_all_member_status()
+        all_member_status = {x["mid"]: dict(x) for x in all_member_status}
         def append_members():
             step = 32
             for i, mid in enumerate(mid_list):
-                minfo = member_dict[mid]
-                model.append(self.setup_member_row_data(mid, minfo))
+                status = all_member_status[mid]
+                model.append(self.setup_member_row_data(status))
                 if (i + 1) % step == 0:
                     yield True
             yield False
         appender = append_members()
         if next(appender):
-            main_thread_run(next, appender)
+            GLib.idle_add(next, appender)
 
         self.loading_member = False
 
@@ -753,7 +754,9 @@ class Controller(GObject.GObject):
                     new_row = model.insert_after(row.iter)
                 else:
                     new_row = model.append()
-                model[new_row] = self.setup_member_row_data(mid, minfo)
+
+                status = self.db.get_member_status(mid)
+                model[new_row] = self.setup_member_row_data(status)
                 self.app.status_show_message("new-member",
                         f"Fetch user {member_name}[ID:{mid}] done.")
 
@@ -960,7 +963,8 @@ class Controller(GObject.GObject):
             mpath = mrow.path
             model = self.builder_object("liststore_member")
 
-            row_data = self.setup_member_row_data(mid, minfo)
+            status = self.db.get_member_status(mid)
+            row_data = self.setup_member_row_data(status)
             model[mpath][MEMBER_COL_NEWITEM] = row_data[MEMBER_COL_NEWITEM]
             model[mpath][MEMBER_COL_LASTUPDATE] = row_data[MEMBER_COL_LASTUPDATE]
             model[mpath][MEMBER_COL_VISIBLE] = row_data[MEMBER_COL_VISIBLE]

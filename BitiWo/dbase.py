@@ -182,6 +182,49 @@ class DataBase:
             last_update = last_update[0]
         return last_update
 
+    def get_all_member_status(self):
+        """Reture member info with some video status
+        STATUS:
+            * video new count
+            * last created video timestamp
+        """
+        self.cur.execute("""SELECT members.*, u.cnt AS new_count, l.last As last_created
+                FROM members
+                LEFT JOIN
+                    (SELECT mid, COUNT(*) as cnt
+                    FROM videos WHERE visited = 0 GROUP by mid
+                    ) AS u
+                    ON members.mid = u.mid
+                LEFT JOIN
+                    (SELECT mid, MAX(created) as last
+                    FROM videos GROUP by mid
+                    ) AS l
+                    ON members.mid = l.mid
+                """)
+        return self.cur.fetchall()
+
+    def get_member_status(self, mid):
+        """Reture member info with some video status
+        STATUS:
+            * video new count
+            * last created video timestamp
+        """
+        self.cur.execute("""SELECT members.*, u.cnt AS new_count, l.last As last_created
+                FROM members
+                LEFT JOIN
+                    (SELECT mid, COUNT(*) as cnt
+                    FROM videos WHERE visited = 0 GROUP by mid
+                    ) AS u
+                    ON members.mid = u.mid
+                LEFT JOIN
+                    (SELECT mid, MAX(created) as last
+                    FROM videos GROUP by mid
+                    ) AS l
+                    ON members.mid = l.mid
+                WHERE members.mid = ?
+                """, (mid,))
+        return dict(self.cur.fetchone())
+
     def get_all_bvid_of_mid(self, mid):
         """Return a set of all the bvid for the given mid"""
         self.cur.execute("SELECT bvid FROM videos WHERE mid=?;", (mid,))

@@ -136,6 +136,7 @@ class ExtractorBilibili(Extractor):
                         new_videos.append(vinfo)
                     else:
                         raise StopIteration
+                n += 1
                 time.sleep(1)
         except StopIteration:
             pass

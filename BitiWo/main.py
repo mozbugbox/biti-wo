@@ -1070,6 +1070,7 @@ class Controller(GObject.GObject):
                 break
         if mrow:
             treeview.set_cursor(mrow.path, None, False)
+        treeview.grab_focus()
 
     def pop_video_pages(self, bvid, video_page_info_list):
         """Show list of pages for a given video"""

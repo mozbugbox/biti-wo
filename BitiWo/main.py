@@ -716,18 +716,33 @@ class Controller(GObject.GObject):
             mid_txt = mobj.group(1) or mobj.group(2)
             mid = int(mid_txt)
         else:
-            self.pop_invalid_message(f"Invalid member id: {text}.")
-
-        log.debug(f"add_new_member: {mid=}")
-
-        if mid > 0:
-            if (uinfo := self.db.get_member_info(mid)) is not None:
-                self.pop_invalid_message(f"Member {uinfo['name']}[ID: {mid}] already exists.")
-            else:
-                self.app.status_show_message("new-member", f"Fetching user ID {mid}...")
-                future = self.executor_member_loader.submit(self.fetch_new_member, mid)
+            bvid, aid = self.extractor.video_id_from_url(text)
+            if bvid or aid:
+                def add_member_from_vid():
+                    data = self.extractor.get_video_info(bvid, aid)
+                    mid = data["data"]["owner"]["mid"]
+                    main_thread_run(self.add_new_member, mid)
+                future = self.executor_member_loader.submit(add_member_from_vid)
                 future.add_done_callback(debug_future_exception)
                 self.load_member_futures.add(future)
+                return
+
+        log.debug(f"on_add_new_member: {mid=}")
+
+        if mid > 0:
+            self.add_new_member(mid)
+        else:
+            self.pop_invalid_message(f"Invalid member id: {text}.")
+
+    def add_new_member(self, mid):
+        log.debug(f"add_new_member: {mid=}")
+        if (uinfo := self.db.get_member_info(mid)) is not None:
+            self.pop_invalid_message(f"Member {uinfo['name']}[ID: {mid}] already exists.")
+        else:
+            self.app.status_show_message("new-member", f"Fetching user ID {mid}...")
+            future = self.executor_member_loader.submit(self.fetch_new_member, mid)
+            future.add_done_callback(debug_future_exception)
+            self.load_member_futures.add(future)
 
     def on_reload_video_cover_image(self, action, param, udata):
         """Reload a cached cover image"""
@@ -737,6 +752,11 @@ class Controller(GObject.GObject):
 
     def fetch_new_member(self, mid):
         """Get new member information from network and add it"""
+        member_info = self.extractor.get_member_info(mid)
+        if member_info["code"] == 0:
+            msg = f"Fetching user {member_info['data']['name']}[ID:{mid}] ..."
+            main_thread_run(self.app.status_show_message, "new-member", msg)
+
         page_info = self.extractor.get_all_video_pages(mid)
         if len(page_info) > 0:
             def add_a_member():

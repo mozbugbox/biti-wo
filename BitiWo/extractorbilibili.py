@@ -15,6 +15,7 @@ import json
 import requests
 import threading
 import collections
+import urllib.parse as uparse
 
 NATIVE = sys.getfilesystemencoding()
 
@@ -87,6 +88,59 @@ class ExtractorBilibili(Extractor):
         headers |= {
             "Referer": "https://space.bilibili.com/",
         }
+
+    def video_id_from_url(self, url):
+        """Return (bvid, aid) by parse given url."""
+        bvid = aid = None
+        _VALID_URL = r'''(?x)
+                        https?://
+                            (?:(?:www|bangumi)\.)?
+                            bilibili\.(?:tv|com)/
+                            (?:
+                                (?:
+                                    video/[aA][vV]|
+                                    anime/(?P<anime_id>\d+)/play\#
+                                )(?P<id>\d+)|
+                                (s/)?video/[bB][vV](?P<id_bv>[^/?#&]+)
+                            )
+                            (?:/?\?p=(?P<page>\d+))?
+                        '''
+        mobj = re.match(_VALID_URL, url)
+        if mobj:
+            bvid = mobj.group("id_bv")
+            aid = mobj.group("id")
+        else:
+            _VALID_URL = r'https?://player\.bilibili\.com/player\.html\?.*?\b(aid=(?P<id>\d+)|bvid=(?P<id_bv>[^/?#&=]+))'
+            mobj = re.match(_VALID_URL, url)
+            if mobj:
+                uobj = uparse.urlparse(url)
+                query = uparse.parse_qs(uobj.query)
+                bvid = query.get("bvid")
+                aid = query.get("aid")
+
+        return bvid, aid
+
+    def get_video_info(self, bvid=None, aid=None):
+        log.debug(f"Getting video info: {bvid=}, {aid=} ...")
+        url = "http://api.bilibili.com/x/web-interface/view"
+        if bvid:
+            query = {"bvid": bvid}
+        else:
+            query = {"aid": aid}
+        resp = self.get(url, params=query)
+        data = resp.json()
+        return data
+
+    def get_member_info(self, mid):
+        """Get user information by mid"""
+        log.debug(f"Getting user info: {mid=} ...")
+        url = "http://api.bilibili.com/x/space/acc/info"
+        query = {
+                "mid": mid,
+                }
+        resp = self.get(url, params=query)
+        data = resp.json()
+        return data
 
     def get_video_page(self, mid, page_num):
         """Download a video page for a member"""
